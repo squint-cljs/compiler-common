@@ -73,3 +73,10 @@
   (-> (str expr)
       (emit-wrap env)
       (emit-repl env)))
+
+(defmethod emit #?(:clj java.lang.String :cljs js/String) [^String expr env]
+  (-> (if (and (:jsx env)
+               (not (:jsx-attr env)))
+        expr
+        (emit-wrap (pr-str expr) env))
+      (emit-repl env)))
