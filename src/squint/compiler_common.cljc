@@ -99,3 +99,43 @@
   ;; RegExp case moved here:
   ;; References to the global RegExp object prevents optimization of regular expressions.
   (emit-wrap (str expr) env))
+
+(def prefix-unary-operators '#{!})
+
+(def suffix-unary-operators '#{++ --})
+
+(def infix-operators #{"+" "+=" "-" "-=" "/" "*" "%" "=" "==" "===" "<" ">" "<=" ">=" "!="
+                       "<<" ">>" "<<<" ">>>" "!==" "&" "|" "&&" "||" "not=" "instanceof"})
+
+(def chainable-infix-operators #{"+" "-" "*" "/" "&" "|" "&&" "||"})
+
+(defn infix-operator? [expr]
+  (contains? infix-operators (name expr)))
+
+(defn prefix-unary? [expr]
+  (contains? prefix-unary-operators expr))
+
+(defn suffix-unary? [expr]
+  (contains? suffix-unary-operators expr))
+
+(defn emit-args [env args]
+  (let [env (assoc env :context :expr :top-level false)]
+    (map #(emit % env) args)))
+
+(defn emit-infix [_type enc-env [operator & args]]
+  (let [env (assoc enc-env :context :expr :top-level false)
+        acount (count args)]
+    (if (and (not (chainable-infix-operators (name operator))) (> acount 2))
+      (emit (list 'cljs.core/and
+                  (list operator (first args) (second args))
+                  (list* operator (rest args))))
+      (-> (if (and (= '- operator)
+                   (= 1 acount))
+            (str "-" (emit (first args) env))
+            (-> (let [substitutions {'= "===" == "===" '!= "!=="
+                                     'not= "!=="
+                                     '+ "+"}]
+                  (str "(" (str/join (str " " (or (substitutions operator) operator) " ")
+                                     (emit-args env args)) ")"))
+                (emit-wrap enc-env)))
+          (emit-repl enc-env)))))
