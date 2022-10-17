@@ -1,10 +1,8 @@
 (ns squint.compiler-common
   (:require
-   [clojure.string :as str]
-   ;; [com.reasonr.string :as rstr]
-   [edamame.core :as e]
    #?(:cljs [goog.string.format])
-   #?(:cljs [goog.string :as gstring])))
+   #?(:cljs [goog.string :as gstring])
+   [clojure.string :as str]))
 
 #?(:cljs (def Exception js/Error))
 
@@ -56,6 +54,14 @@
 (defn comma-list [coll]
   (str "(" (str/join ", " coll) ")"))
 
+(defn munge* [expr]
+  (let [munged (str (munge expr))
+        keep #{"import" "await"}]
+    (cond-> munged
+      (and (str/ends-with? munged "$")
+           (contains? keep (str expr)))
+      (str/replace #"\$$" ""))))
+
 (defmethod emit nil [_ env]
   (emit-wrap "null" env))
 
@@ -79,11 +85,6 @@
                (not (:jsx-attr env)))
         expr
         (emit-wrap (pr-str expr) env))
-      (emit-repl env)))
-
-;; TODO: cherry needs to have a custom implementation here
-(defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
-  (-> (emit-wrap (str (pr-str (subs (str expr) 1))) env)
       (emit-repl env)))
 
 #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
