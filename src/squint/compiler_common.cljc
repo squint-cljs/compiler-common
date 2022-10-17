@@ -89,6 +89,11 @@
 #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
           (str \/ expr \/)))
 
+(defn escape-jsx [env expr]
+  (if (:jsx env)
+    (format "{%s}" expr)
+    expr))
+
 (defmethod emit :default [expr env]
   ;; RegExp case moved here:
   ;; References to the global RegExp object prevents optimization of regular expressions.
