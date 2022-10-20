@@ -75,10 +75,16 @@
     (str "\nglobalThis._repl = " s)
     s))
 
+(defn escape-jsx [expr env]
+  (if (:jsx env)
+    (format "{%s}" expr)
+    expr))
+
 (defmethod emit ::number [expr env]
   (-> (str expr)
       (emit-wrap env)
-      (emit-repl env)))
+      (emit-repl env)
+      (escape-jsx env)))
 
 (defmethod emit #?(:clj java.lang.String :cljs js/String) [^String expr env]
   (-> (if (and (:jsx env)
@@ -89,11 +95,6 @@
 
 #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
           (str \/ expr \/)))
-
-(defn escape-jsx [env expr]
-  (if (:jsx env)
-    (format "{%s}" expr)
-    expr))
 
 (defmethod emit :default [expr env]
   ;; RegExp case moved here:
