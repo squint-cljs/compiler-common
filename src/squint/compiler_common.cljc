@@ -140,3 +140,51 @@
                                      (emit-args env args)) ")"))
                 (emit-wrap enc-env)))
           (emit-repl enc-env)))))
+
+(def core-vars (atom #{}))
+
+(def ^:dynamic *core-package* "squint-cljs/core.js")
+
+(defn maybe-core-var [sym]
+  (let [m (munge sym)]
+    (when (and (contains? @core-vars m)
+               (not (contains? @*excluded-core-vars* m)))
+      (swap! *imported-vars* update *core-package* (fnil conj #{}) m)
+      m)))
+
+(defmethod emit #?(:clj clojure.lang.Symbol :cljs Symbol) [expr env]
+  (if (:quote env)
+    (emit-wrap (escape-jsx (emit (list 'cljs.core/symbol
+                                       (str expr))
+                                 (dissoc env :quote))env)
+               env)
+    (if (and (simple-symbol? expr)
+             (str/includes? (str expr) "."))
+      (let [[fname path] (str/split (str expr) #"\." 2)
+            fname (symbol fname)]
+        (escape-jsx (str (emit fname (dissoc (expr-env env) :jsx))
+                         "." path) env))
+      (let [munged-name (fn [expr] (munge* (name expr)))
+            expr (if-let [sym-ns (namespace expr)]
+                   (let [sn (symbol (name expr))]
+                     (or (when (or (= "cljs.core" sym-ns)
+                                   (= "clojure.core" sym-ns))
+                           (some-> (maybe-core-var sn) munge))
+                         (when (= "js" sym-ns)
+                           (munge* (name expr)))
+                         (when-let [resolved-ns (get @*aliases* (symbol sym-ns))]
+                           (swap! *imported-vars* update resolved-ns (fnil conj #{}) (munged-name sn))
+                           (str sym-ns "_"  (munged-name sn)))
+                         (if *repl*
+                           (str "globalThis." (munge *cljs-ns*) ".aliases." (namespace expr) "." (name expr))
+                           expr)))
+                   (if-let [renamed (get (:var->ident env) expr)]
+                     (munge* (str renamed))
+                     (or
+                      (some-> (maybe-core-var expr) munge)
+                      (let [m (munged-name expr)]
+                        (str (when *repl*
+                               (str (munge *cljs-ns*) ".")) m)))))]
+        (-> (emit-wrap (escape-jsx (str expr) env)
+                       env)
+            (emit-repl env))))))
