@@ -472,3 +472,29 @@
 
 (defmethod emit-special 'str [_type env [_str & args]]
   (apply clojure.core/str (interpose " + " (emit-args env args))))
+
+(defn emit-method [env obj method args]
+  (let [eenv (expr-env env)]
+    (emit-wrap (str (emit obj eenv) "."
+                    (str method)
+                    (comma-list (emit-args env args)))
+               env)))
+
+(defn emit-aget [env var idxs]
+  (emit-wrap (apply str
+                    (emit var (expr-env env))
+                    (interleave (repeat "[") (emit-args env idxs) (repeat "]")))
+             env))
+
+(defmethod emit-special '. [_type env [_period obj method & args]]
+  (let [[method args] (if (seq? method)
+                        [(first method) (rest method)]
+                        [method args])
+        method-str (str method)]
+    (-> (if (str/starts-with? method-str "-")
+          (emit-aget env obj [(subs method-str 1)])
+          (emit-method env obj (symbol method-str) args))
+        (emit-repl env))))
+
+(defmethod emit-special 'aget [_type env [_aget var & idxs]]
+  (emit-aget env var idxs))
