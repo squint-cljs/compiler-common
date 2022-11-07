@@ -36,6 +36,7 @@
 (def ^:dynamic *imported-vars* (atom {}))
 (def ^:dynamic *excluded-core-vars* (atom #{}))
 (def ^:dynamic *public-vars* (atom #{}))
+(def ^:dynamic *recur-targets* (atom []))
 (def ^:dynamic *repl* false)
 (def ^:dynamic *cljs-ns* 'user)
 
@@ -188,3 +189,71 @@
         (-> (emit-wrap (escape-jsx (str expr) env)
                        env)
             (emit-repl env))))))
+
+(defn wrap-await [s]
+  (format "(%s)" (str "await " s)))
+
+(defn wrap-iife [s]
+  (cond-> (format "(%sfunction () {\n %s\n})()" (if *async* "async " "") s)
+    *async* (wrap-await)))
+
+(defn emit-do [env exprs]
+  (let [bl (butlast exprs)
+        l (last exprs)
+        ctx (:context env)
+        statement-env (assoc env :context :statement)
+        iife? (and (seq bl) (= :expr ctx))
+        s (cond-> (str (str/join "" (map #(statement (emit % statement-env)) bl))
+                       (emit l (assoc env :context
+                                      (if iife? :return
+                                          ctx))))
+            iife?
+            (wrap-iife))]
+    s))
+
+(defmethod emit-special 'do [_type env [_ & exprs]]
+  (emit-do env exprs))
+
+(defn emit-let [enc-env bindings body is-loop]
+  (let [context (:context enc-env)
+        env (assoc enc-env :context :expr)
+        partitioned (partition 2 bindings)
+        iife? (or (= :expr context)
+                  (and *repl* (:top-level env)))
+        upper-var->ident (:var->ident enc-env)
+        [bindings var->ident]
+        (let [env (dissoc env :top-level)]
+          (reduce (fn [[acc var->ident] [var-name rhs]]
+                    (let [vm (meta var-name)
+                          rename? (not (:squint.compiler/no-rename vm))
+                          renamed (if rename? (munge (gensym var-name))
+                                      var-name)
+                          lhs (str renamed)
+                          rhs (emit rhs (assoc env :var->ident var->ident))
+                          expr (format "let %s = %s;\n" lhs rhs)
+                          var->ident (assoc var->ident var-name renamed)]
+                      [(str acc expr) var->ident]))
+                  ["" upper-var->ident]
+                  partitioned))
+        enc-env (assoc enc-env :var->ident var->ident :top-level false)]
+    (-> (cond->> (str
+                  bindings
+                  (when is-loop
+                    (str "while(true){\n"))
+                  ;; TODO: move this to env arg?
+                  (binding [*recur-targets*
+                            (if is-loop (map var->ident (map first partitioned))
+                                *recur-targets*)]
+                    (emit-do (if iife?
+                               (assoc enc-env :context :return)
+                               enc-env) body))
+                  (when is-loop
+                    ;; TODO: not sure why I had to insert the ; here, but else
+                    ;; (loop [x 1] (+ 1 2 x)) breaks
+                    (str ";break;\n}\n")))
+          iife?
+          (wrap-iife))
+        (emit-repl env))))
+
+(defmethod emit-special 'let* [_type enc-env [_let bindings & body]]
+  (emit-let enc-env bindings body false))
