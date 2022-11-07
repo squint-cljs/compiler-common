@@ -257,3 +257,6 @@
 
 (defmethod emit-special 'let* [_type enc-env [_let bindings & body]]
   (emit-let enc-env bindings body false))
+
+(defmethod emit-special 'loop* [_ env [_ bindings & body]]
+  (emit-let env bindings body true))
