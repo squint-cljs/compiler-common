@@ -515,3 +515,26 @@
 
 (defmethod emit-special 'new [_type env [_new class & args]]
   (emit-wrap (str "new " (emit class (expr-env env)) (comma-list (emit-args env args))) env))
+
+(defmethod emit-special 'dec [_type env [_ var]]
+  (emit-wrap (str "(" (emit var (assoc env :context :expr)) " - " 1 ")") env))
+
+(defmethod emit-special 'inc [_type env [_ var]]
+  (emit-wrap (str "(" (emit var (assoc env :context :expr)) " + " 1 ")") env))
+
+#_(defmethod emit-special 'defined? [_type env [_ var]]
+    (str "typeof " (emit var env) " !== \"undefined\" && " (emit var env) " !== null"))
+
+#_(defmethod emit-special '? [_type env [_ test then else]]
+    (str (emit test env) " ? " (emit then env) " : " (emit else env)))
+
+(defmethod emit-special 'and [_type env [_ & more]]
+  (emit-wrap (apply str (interpose " && " (emit-args env more))) env))
+
+(defmethod emit-special 'or [_type env [_ & more]]
+  (emit-wrap (apply str (interpose " || " (emit-args env more))) env))
+
+(defmethod emit-special 'while [_type env [_while test & body]]
+  (str "while (" (emit test) ") { \n"
+       (emit-do env body)
+       "\n }"))
