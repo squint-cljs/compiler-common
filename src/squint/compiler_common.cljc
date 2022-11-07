@@ -469,3 +469,6 @@
                              acc))
                          ""
                          @*aliases*)))))))
+
+(defmethod emit-special 'str [_type env [_str & args]]
+  (apply clojure.core/str (interpose " + " (emit-args env args))))
