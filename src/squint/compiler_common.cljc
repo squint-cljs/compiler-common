@@ -365,7 +365,7 @@
 
 (defn process-require-clause [[libname & {:keys [refer as]}]]
   (let [libname (resolve-ns libname)
-        [libname suffix] (str/split libname #"\$" 2)
+        [libname suffix] (str/split (if (string? libname) libname (str libname)) #"\$" 2)
         [p & _props] (when suffix
                        (str/split suffix #"\."))
         as (when as (munge as))]
