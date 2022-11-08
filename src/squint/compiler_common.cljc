@@ -367,7 +367,8 @@
   (let [libname (resolve-ns libname)
         [libname suffix] (str/split libname #"\$" 2)
         [p & _props] (when suffix
-                       (str/split suffix #"\."))]
+                       (str/split suffix #"\."))
+        as (when as (munge as))]
     (str
      (when-not *repl*
        (when (and as (= "default" p))
@@ -380,7 +381,7 @@
        (when *repl*
          (if (str/ends-with? libname "$default")
            (statement (format "import %s from '%s'" as (str/replace libname "$default" "")))
-           (statement (format "import * as %s from '%s'"  as libname)))))
+           (statement (format "import * as %s from '%s'" as libname)))))
      (when refer
        (statement (format "import { %s } from '%s'"  (str/join ", " refer) libname))))))
 
