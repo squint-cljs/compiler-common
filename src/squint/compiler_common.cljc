@@ -647,3 +647,40 @@ break;}" body)
             (not= :statement (:context env))
             (wrap-iife))
           (emit-wrap outer-env)))))
+
+#_(defmethod emit-special 'funcall [_type env [fname & args :as _expr]]
+  (-> (emit-wrap (str
+                  (emit fname (expr-env env))
+                  ;; this is needed when calling keywords, symbols, etc. We could
+                  ;; optimize this later by inferring that we're not directly
+                  ;; calling a `function`.
+                  #_(when-not interop? ".call")
+                  (comma-list (emit-args env
+                                         args #_(if interop? args
+                                                    (cons nil args)))))
+                 env)
+      (emit-repl env)))
+
+(defmethod emit-special 'funcall [_type env [fname & args :as _expr]]
+  (let [ns (when (symbol? fname) (namespace fname))
+        fname (if ns (symbol (munge ns) (name fname))
+                  fname)
+        cherry? (= :cherry *target*)
+        cherry+interop? (and
+                         cherry?
+                         (= "js" ns))]
+    (-> (emit-wrap (str
+                    (emit fname (expr-env env))
+                    ;; this is needed when calling keywords, symbols, etc. We could
+                    ;; optimize this later by inferring that we're not directly
+                    ;; calling a `function`.
+                    (when (and cherry? (not cherry+interop?)) ".call")
+                    (comma-list (emit-args env
+                                           (if cherry?
+                                             (if (not cherry+interop?)
+                                               (cons nil args)
+                                               args)
+                                             args
+                                             ))))
+                   env)
+        (emit-repl env))))
