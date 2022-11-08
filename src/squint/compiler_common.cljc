@@ -397,7 +397,7 @@
                   (let [full (resolve-ns full)]
                     (case as
                       (:as :as-alias)
-                      (assoc aliases alias full)
+                      (assoc aliases (munge alias) full)
                       aliases)))
                 {:current name})))
   (str
