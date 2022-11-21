@@ -1,4 +1,4 @@
-name: Tests
+name: Squint
 
 on: [push, pull_request]
 
