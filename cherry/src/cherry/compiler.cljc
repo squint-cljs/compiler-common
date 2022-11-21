@@ -27,7 +27,11 @@
                                           statement suffix-unary?]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
-(set! cc/infix-operators (disj cc/infix-operators "="))
+#?(:clj (defmacro set-var! [the-var value]
+          `(alter-var-root (var ~the-var) (constantly ~value))))
+
+(#?(:clj set-var!
+    :cljs set!) cc/infix-operators (disj cc/infix-operators "="))
 
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
