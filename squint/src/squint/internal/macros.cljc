@@ -195,7 +195,7 @@
   [_ _ & body]
   `(new cljs.core/LazySeq (fn [] ~@body)))
 
-#_(defn core-for
+(defn core-for
   "List comprehension. Takes a vector of one or more
    binding-form/collection-expr pairs, each followed by zero or more
    modifiers, and yields a lazy sequence of evaluations of expr.
@@ -229,8 +229,8 @@
                                      (keyword? k) (err "Invalid 'for' keyword " k)
                                      next-groups
                                      `(let [iterys# ~(emit-bind next-groups)
-                                            fs# (seq (iterys# ~next-expr))]
-                                        (if fs#
+                                            fs# (es6-iterator-seq (iterys# ~next-expr))]
+                                        (if (first fs#)
                                           (concat fs# (~giter (rest ~gxs)))
                                           (recur (rest ~gxs))))
                                      :else `(cons ~body-expr
@@ -261,9 +261,13 @@
                           `(fn ~giter [~gxs]
                              (lazy-seq
                               (loop [~gxs ~gxs]
-                                (when-let [~gxs (seq ~gxs)]
-                                  (if (chunked-seq? ~gxs)
-                                    (let [c# ^not-native (chunk-first ~gxs)
+                                (prn :gxs ~gxs)
+                                (when-let [~gxs (es6-iterator-seq ~gxs)]
+                                  (println ">>>" ~gxs (~'js* "typeof(~{})" ~gxs) (count ~gxs))
+                                  (let [~bind (first ~gxs)]
+                                    ~(do-mod mod-pairs))
+                                  #_(if false #_(seqable? ~gxs)
+                                    (let [c# ^not-native (first ~gxs)
                                           size# (count c#)
                                           ~gb (chunk-buffer size#)]
                                       (if (coercive-boolean
@@ -276,8 +280,7 @@
                                          (chunk ~gb)
                                          (~giter (chunk-rest ~gxs)))
                                         (chunk-cons (chunk ~gb) nil)))
-                                    (let [~bind (first ~gxs)]
-                                      ~(do-mod mod-pairs)))))))))))]
+                                    )))))))))]
     `(let [iter# ~(emit-bind (to-groups seq-exprs))]
        (iter# ~(second seq-exprs)))))
 

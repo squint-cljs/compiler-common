@@ -449,6 +449,18 @@ function lazy(f) {
   return new LazyIterable(f);
 }
 
+export function es6_iterator_seq(iter) {
+  console.log('iter', iter);
+  let _iter = _iterator(iter);
+  let v = _iter.next();
+  if (v.done) {
+    console.log('returning null');
+    return null;
+  }
+  console.log('yolo', v.value);
+  return cons(v.value, _iter);
+}
+
 export function cons(x, coll) {
   return lazy(function* () {
     yield x;
@@ -1060,7 +1072,8 @@ export class LazySeq {
     this.f = f;
   }
   *[Symbol.iterator]() {
-    yield* this.f();
+    let x = this.f();
+    yield* iterable(x);
   }
 }
 
