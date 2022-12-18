@@ -96,6 +96,13 @@
         (emit-wrap (pr-str expr) env))
       (emit-repl env)))
 
+(defmethod emit #?(:clj java.lang.Boolean :cljs js/Boolean) [^String expr env]
+  (-> (if (:jsx-attr env)
+        (escape-jsx expr env)
+        (str expr))
+      (emit-wrap env)
+      (emit-repl env)))
+
 #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
           (str \/ expr \/)))
 
