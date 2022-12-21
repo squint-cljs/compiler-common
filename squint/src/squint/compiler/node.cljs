@@ -107,5 +107,4 @@
   [contents]
   (let [res (compile-string* contents nil)]
     (.then res (fn [m]
-                 (prn :m m)
                  (:javascript m)))))
