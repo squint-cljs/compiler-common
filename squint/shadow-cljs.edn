@@ -31,7 +31,10 @@
     :compiler {:depends-on #{:cljs_core}
                :exports
                {compileString squint.compiler/compile-string}}
-    :cli {:depends-on #{:compiler}
+    :compiler.node {:depends-on #{:compiler}
+                    :exports
+                    {compileString squint.compiler.node/compile-string-js}}
+    :cli {:depends-on #{:compiler :compiler.node}
           :init-fn squint.internal.cli/init}}
    :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}

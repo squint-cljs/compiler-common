@@ -34,9 +34,8 @@
                                      fstr (slurp f)]
                                  {:source fstr}))}))
 
-(defn scan-macros [file]
-  (let [s (slurp file)
-        maybe-ns (e/parse-next (e/reader s) compiler/squint-parse-opts)]
+(defn scan-macros [s]
+  (let [maybe-ns (e/parse-next (e/reader s) compiler/squint-parse-opts)]
     (when (and (seq? maybe-ns)
                (= 'ns (first maybe-ns)))
       (let [[_ns _name & clauses] maybe-ns
@@ -69,16 +68,34 @@
                   (js/Promise.resolve nil)
                   require-macros))))))
 
+(defn compile-string* [contents opts]
+  (-> (js/Promise.resolve (scan-macros contents))
+      (.then #(compiler/compile-string* contents opts))))
+
 (defn compile-file [{:keys [in-file out-file extension] :as opts}]
-  (-> (js/Promise.resolve (scan-macros in-file))
-      (.then #(compiler/compile-string* (slurp in-file) opts))
-      (.then (fn [{:keys [javascript jsx]}]
-               (let [out-file (or out-file
-                                  (str/replace in-file #".clj(s|c)$"
-                                               (if jsx
-                                                 ".jsx"
-                                                 (or (when-let [ext extension]
-                                                       (str "." (str/replace ext #"^\." "")))
-                                                     ".mjs"))))]
-                 (spit out-file javascript)
-                 {:out-file out-file})))))
+  (let [contents (slurp in-file)]
+    (-> (compile-string* contents opts)
+        (.then (fn [{:keys [javascript jsx]}]
+                 (let [out-file (or out-file
+                                    (str/replace in-file #".clj(s|c)$"
+                                                 (if jsx
+                                                   ".jsx"
+                                                   (or (when-let [ext extension]
+                                                         (str "." (str/replace ext #"^\." "")))
+                                                       ".mjs"))))]
+                   (spit out-file javascript)
+                   {:out-file out-file}))))))
+
+(defn compile-file-js
+  "Same as compile-file but expects JS object as arg and returns JS
+  object. Used for exposing to JS."
+  [m]
+  (let [res (compile-file (js->clj m :keywordize-keys true))]
+    (clj->js res)))
+
+(defn compile-string-js
+  [contents]
+  (let [res (compile-string* contents nil)]
+    (.then res (fn [m]
+                 (prn :m m)
+                 (:javascript m)))))
