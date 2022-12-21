@@ -32,24 +32,34 @@
 (def ctx (sci/init {:load-fn (fn [{:keys [namespace]}]
                                (let [f (resolve-file namespace)
                                      fstr (slurp f)]
-                                 {:source fstr}))}))
+                                 {:source fstr}))
+                    :classes {:allow :all
+                              'js js/globalThis}
+                    }))
+
+(sci/alter-var-root sci/print-fn (constantly *print-fn*))
+(sci/alter-var-root sci/print-err-fn (constantly *print-err-fn*))
+
+(sci/enable-unrestricted-access!)
 
 (defn scan-macros [s]
   (let [maybe-ns (e/parse-next (e/reader s) compiler/squint-parse-opts)]
     (when (and (seq? maybe-ns)
                (= 'ns (first maybe-ns)))
       (let [[_ns _name & clauses] maybe-ns
-            require-macros (some #(when (and (seq? %)
-                                             (= :require-macros (first %)))
-                                    (rest %))
-                                 clauses)]
+            [require-macros reload] (some (fn [[clause reload]]
+                                            (when (and (seq? clause)
+                                                       (= :require-macros (first clause)))
+                                              [(rest clause) reload]))
+                                          (partition-all 2 1 clauses))]
         (when require-macros
           (reduce (fn [prev require-macros]
                     (.then prev
                            (fn [_]
                              (let [[macro-ns & {:keys [refer]}] require-macros
                                    macros (js/Promise.resolve
-                                           (do (sci/eval-form ctx (list 'require (list 'quote macro-ns)))
+                                           (do (sci/eval-form ctx (cond-> (list 'require (list 'quote macro-ns))
+                                                                    reload (concat [:reload])))
                                                (let [publics (sci/eval-form ctx
                                                                             `(ns-publics '~macro-ns))
                                                      ks (keys publics)
