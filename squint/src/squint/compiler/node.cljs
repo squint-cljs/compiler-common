@@ -78,14 +78,14 @@
                   (js/Promise.resolve nil)
                   require-macros))))))
 
-(defn compile-string* [contents opts]
+(defn compile-string [contents opts]
   (-> (js/Promise.resolve (scan-macros contents))
       (.then #(compiler/compile-string* contents opts))))
 
-(defn compile-file [{:keys [in-file out-file extension] :as opts}]
-  (let [contents (slurp in-file)]
-    (-> (compile-string* contents opts)
-        (.then (fn [{:keys [javascript jsx]}]
+(defn compile-file [{:keys [in-file in-str out-file extension] :as opts}]
+  (let [contents (or in-str (slurp in-file))]
+    (-> (compile-string contents opts)
+        (.then (fn [{:keys [javascript jsx] :as opts}]
                  (let [out-file (or out-file
                                     (str/replace in-file #".clj(s|c)$"
                                                  (if jsx
@@ -94,17 +94,23 @@
                                                          (str "." (str/replace ext #"^\." "")))
                                                        ".mjs"))))]
                    (spit out-file javascript)
-                   {:out-file out-file}))))))
+                   (assoc opts :out-file out-file)))))))
 
-(defn compile-file-js
-  "Same as compile-file but expects JS object as arg and returns JS
-  object. Used for exposing to JS."
-  [m]
-  (let [res (compile-file (js->clj m :keywordize-keys true))]
-    (clj->js res)))
+(defn ->clj [x]
+  (js->clj x :keywordize-keys true))
 
-(defn compile-string-js
-  [contents]
-  (let [res (compile-string* contents nil)]
-    (.then res (fn [m]
-                 (:javascript m)))))
+(defn- jsify [f]
+  (fn [& args]
+    (let [args (mapv ->clj args)
+          ret (apply f args)]
+      (if (instance? js/Promise ret)
+        (.then ret clj->js)
+        (clj->js ret)))))
+
+#_{:clj-kondo/ignore [:unused-private-var]}
+(def ^:private compile-string-js
+  (jsify compile-string))
+
+#_{:clj-kondo/ignore [:unused-private-var]}
+(def ^:private compile-file-js
+  (jsify compile-file))
