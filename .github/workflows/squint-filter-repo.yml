@@ -48,7 +48,9 @@ jobs:
       with:
         bb: latest
 
-    - name: Run tests
+    - name: Filter repo
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         bb squint:filter-repo
 
