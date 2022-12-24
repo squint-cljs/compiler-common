@@ -51,6 +51,7 @@ jobs:
     - name: Filter repo
       env:
         GITHUB_TOKEN: ${{ secrets.SQUINT_GITHUB_TOKEN }}
+        token: ${{ secrets.SQUINT_GITHUB_TOKEN }}
       run: |
         bb squint:filter-repo
 
