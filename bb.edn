@@ -12,4 +12,5 @@
              (shell "git fetch upstream")
              (shell {:continue true} "git rebase upstream/main")
              (shell "git checkout deps.edn --theirs")
+             (shell "git add deps.edn")
              (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")))}}}
