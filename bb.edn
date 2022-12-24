@@ -12,7 +12,7 @@
              (let [prefix (if-let [token (System/getenv "SQUINT_GITHUB_TOKEN")]
                             (str "borkdude:" token "@")
                             "")]
-               (shell (format "git remote add upstream https://%sgithub.com/squint-cljs/squint.git"
+               (shell (format "git remote add origin https://%sgithub.com/squint-cljs/squint.git"
                               prefix)))
              (shell "git fetch upstream")
              #_(shell "git rebase upstream/main")
