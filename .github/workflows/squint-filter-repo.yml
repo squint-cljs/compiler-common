@@ -54,8 +54,8 @@ jobs:
         SQUINT_GITHUB_TOKEN: ${{ secrets.SQUINT_GITHUB_TOKEN }}
         token: ${{ secrets.SQUINT_GITHUB_TOKEN }}
       run: |
-        git config --global user.email "michielborkent@gmail.com"
-        git config --global user.name "Michiel Borkent"
+        git config user.name github-actions[bot]
+        git config user.email github-actions[bot]@users.noreply.github.com
         bb squint:filter-repo
         echo "Pushing"
         git push -u https://borkdude:$SQUINT_GITHUB_TOKEN@github.com/squint-cljs/squint.git HEAD
