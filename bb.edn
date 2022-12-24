@@ -3,7 +3,10 @@
   {:doc "Rewrites squint mirror..."
    :requires ([clojure.string :as str])
    :task (do
-           (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))]
+           (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))
+                 shell (fn [& args]
+                         (apply println args)
+                         (apply shell args))]
              (shell "git filter-repo --subdirectory-filter=squint")
              (shell "git checkout -b" (str "bump-common-" (subs sha 0 7)))
              (shell "git remote add upstream ssh://git@github.com/squint-cljs/squint")
