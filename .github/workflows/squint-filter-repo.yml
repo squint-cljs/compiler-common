@@ -29,6 +29,20 @@ jobs:
         key: "${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}"
         restore-keys: "${{ runner.os }}-deps-"
 
+    - name: Setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Download filter-repo
+      run: |
+        curl -sLO https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
+        chmod +x git-filter-repo
+        cp git-filter-repo /usr/local/bin
+        printf '#!/bin/sh\n\nexec python "$@"\n' > python3
+        chmod +x python3
+        cp python3 /usr/local/bin
+
     - name: Setup Clojure
       uses: DeLaGuardo/setup-clojure@9.3
       with:
