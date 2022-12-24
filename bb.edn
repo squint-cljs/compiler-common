@@ -16,12 +16,7 @@
                (shell (format "git remote add origin https://%sgithub.com/squint-cljs/squint.git"
                               prefix)))
              (shell "git fetch origin")
-             #_(shell "git rebase origin/main")
              (shell "bb bump-common --sha" sha)
              (shell "git add deps.edn")
              (shell "git commit -m 'Bump compiler-common'")
-             (shell {:continue true} "git rebase origin/main --strategy-option theirs")
-             (shell "git status")
-             #_(shell "git checkout deps.edn --theirs")
-             #_(shell "git add deps.edn")
-             (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")))}}}
+             (shell "git rebase origin/main --strategy-option theirs")))}}}
