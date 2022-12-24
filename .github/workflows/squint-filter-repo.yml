@@ -52,6 +52,8 @@ jobs:
       env:
         SQUINT_GITHUB_TOKEN: ${{ secrets.SQUINT_GITHUB_TOKEN }}
       run: |
+        git config --global user.email "michielborkent@gmail.com
+        git config --global user.name "Michiel Borkent"
         bb squint:filter-repo
 
     - name: Create Pull Request
