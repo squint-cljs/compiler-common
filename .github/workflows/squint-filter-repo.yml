@@ -1,9 +1,9 @@
 name: Squint Filter Repo
 
-on: [push]
-  # push:
-  #   branches:
-  #     - main
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   test:
