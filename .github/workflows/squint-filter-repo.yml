@@ -56,5 +56,5 @@ jobs:
         git config --global user.email "michielborkent@gmail.com"
         git config --global user.name "Michiel Borkent"
         bb squint:filter-repo
-        git push
+        git push origin
         gh pr create -t "Bump common"
