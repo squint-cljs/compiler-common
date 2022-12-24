@@ -5,6 +5,7 @@
    :task (do
            (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))]
              (shell "git filter-repo --subdirectory-filter=squint")
+             (shell "git checkout -b" sha)
              (shell "bb bump-common --sha" sha)
              (shell "git add deps.edn")
              (shell "git commit -m 'Bump compiler-common'")
