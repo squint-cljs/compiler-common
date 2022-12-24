@@ -5,4 +5,5 @@
    :task (do
            (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))]
              (shell "git filter-repo --subdirectory-filter=squint")
+             (prn :sha sha)
              (shell "bb bump-common --sha" sha)))}}}
