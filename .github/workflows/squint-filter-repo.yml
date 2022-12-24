@@ -67,10 +67,7 @@ jobs:
         git add deps.edn
         git commit -m "Bump compiler common"
         git rebase origin/main --strategy-option theirs
-
-        bb squint:filter-repo
         echo "Pushing"
-
         git push -u https://borkdude:$GITHUB_TOKEN@github.com/squint-cljs/squint.git HEAD
         branch=$(git branch --show)
         bb -x tasks/pull-request --github-token "$GITHUB_TOKEN" --branch "$branch"
