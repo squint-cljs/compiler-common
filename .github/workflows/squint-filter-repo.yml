@@ -1,0 +1,45 @@
+name: Squint Filter Repo
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest] # windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: "Checkout code"
+      uses: "actions/checkout@v2"
+      with:
+        submodules: true
+
+    - name: Prepare java
+      uses: actions/setup-java@v2
+      with:
+        distribution: "adopt"
+        java-version: 11
+
+    - name: "Restore Cache"
+      uses: "actions/cache@v1"
+      with:
+        path: "~/.m2/repository"
+        key: "${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}"
+        restore-keys: "${{ runner.os }}-deps-"
+
+    - name: Setup Clojure
+      uses: DeLaGuardo/setup-clojure@9.3
+      with:
+        bb: latest
+
+    - name: Run tests
+      run: |
+        bb squint:filter-repo
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        push-to-fork: squint-cljs/squint
