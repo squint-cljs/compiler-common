@@ -5,4 +5,11 @@
    :task (do
            (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))]
              (shell "git filter-repo --subdirectory-filter=squint")
-             (shell "bb bump-common --sha" sha)))}}}
+             (shell "bb bump-common --sha" sha)
+             (shell "git add deps.edn")
+             (shell "git commit -m 'Bump compiler-common'")
+             (shell "git remote add upstream ssh://git@github.com/squint-cljs/squint")
+             (shell "git fetch upstream")
+             (shell "git rebase upstream/main")
+             (shell "git checkout deps.edn --theirs")
+             (shell "git rebase --continue")))}}}
