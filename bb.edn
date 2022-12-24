@@ -15,12 +15,12 @@
                (shell (format "git remote add upstream https://%sgithub.com/squint-cljs/squint.git"
                               prefix)))
              (shell "git fetch upstream")
-             (shell "git rebase upstream/main")
+             #_(shell "git rebase upstream/main")
              (shell "bb bump-common --sha" sha)
              (shell "git add deps.edn")
              (shell "git commit -m 'Bump compiler-common'")
              (shell "git rebase upstream/main")
-             ;; (shell "git checkout deps.edn --theirs")
-             ;; (shell "git add deps.edn")
-             ;; (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")
+             (shell "git checkout deps.edn --theirs")
+             (shell "git add deps.edn")
+             (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")
              ))}}}
