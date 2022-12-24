@@ -10,6 +10,6 @@
              (shell "git commit -m 'Bump compiler-common'")
              (shell "git remote add upstream ssh://git@github.com/squint-cljs/squint")
              (shell "git fetch upstream")
-             (shell "git rebase upstream/main")
+             (shell {:continue true} "git rebase upstream/main")
              (shell "git checkout deps.edn --theirs")
-             (shell "git rebase --continue")))}}}
+             (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")))}}}
