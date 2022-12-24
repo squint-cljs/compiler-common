@@ -56,5 +56,5 @@ jobs:
         git config --global user.email "michielborkent@gmail.com"
         git config --global user.name "Michiel Borkent"
         bb squint:filter-repo
-        git push -u origin HEAD
-        gh pr create -t "Bump common"
+        echo "Pushing"
+        git push -u https://borkdude:$SQUINT_GITHUB_TOKEN@github.com/squint-cljs/squint.git HEAD
