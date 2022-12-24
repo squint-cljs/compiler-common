@@ -1,6 +1,8 @@
 {:tasks
- {filter-repo {:requires ([clojure.string :as str])
-               :task (do
-                       (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))]
-                         (shell "git filter-repo --subdirectory-filter=squint")
-                         (shell "bb bump-common --sha" sha)))}}}
+ {squint:filter-repo
+  {:doc "Rewrites squint mirror"
+   :requires ([clojure.string :as str])
+   :task (do
+           (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))]
+             (shell "git filter-repo --subdirectory-filter=squint")
+             (shell "bb bump-common --sha" sha)))}}}
