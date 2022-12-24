@@ -20,7 +20,7 @@
              (shell "bb bump-common --sha" sha)
              (shell "git add deps.edn")
              (shell "git commit -m 'Bump compiler-common'")
-             (shell {:continue true} "git rebase origin/main")
+             (shell {:continue true} "git merge origin/main")
              (shell "git checkout deps.edn --theirs")
              (shell "git add deps.edn")
-             (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")))}}}
+             (shell {:extra-env {"GIT_EDITOR" "true"}} "git merge --continue")))}}}
