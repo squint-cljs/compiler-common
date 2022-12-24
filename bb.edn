@@ -9,7 +9,11 @@
                          (apply shell args))]
              (shell "git filter-repo --subdirectory-filter=squint")
              (shell "git checkout -b" (str "bump-common-" (subs sha 0 7)))
-             (shell "git remote add upstream git@github.com:squint-cljs/squint.git")
+             (let [prefix (if-let [token (System/getenv "SQUINT_GITHUB_TOKEN")]
+                            (str "borkdude:" token "@")
+                            "")]
+               (shell (format "git remote add upstream https://%sgithub.com:squint-cljs/squint.git"
+                              prefix)))
              (shell "git fetch upstream")
              (shell "git rebase upstream/main")
              (shell "bb bump-common --sha" sha)
