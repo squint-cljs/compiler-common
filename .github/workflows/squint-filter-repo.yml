@@ -60,4 +60,3 @@ jobs:
       uses: peter-evans/create-pull-request@v4
       with:
         token: ${{ secrets.SQUINT_GITHUB_TOKEN }}
-        push-to-fork: squint-cljs/squint
