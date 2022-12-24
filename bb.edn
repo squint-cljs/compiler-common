@@ -9,7 +9,7 @@
                          (apply shell args))]
              (shell "git filter-repo --subdirectory-filter=squint")
              (shell "git checkout -b" (str "bump-common-" (subs sha 0 7)))
-             (shell "git remote add upstream ssh://git@github.com/squint-cljs/squint")
+             (shell "git remote add upstream git@github.com:squint-cljs/squint.git")
              (shell "git fetch upstream")
              (shell "git rebase upstream/main")
              (shell "bb bump-common --sha" sha)
