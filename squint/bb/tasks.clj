@@ -98,7 +98,7 @@
                                                       :base "main"})})
         body (:body resp)
         body (json/parse-string body true)
-        url (:url body)
+        url (:issue_url body)
         comment-url (str url "/comments")]
     (curl/post comment-url
                {:headers headers
