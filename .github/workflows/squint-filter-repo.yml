@@ -6,7 +6,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest] # windows-latest
+        os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -59,4 +59,4 @@ jobs:
         bb squint:filter-repo
         echo "Pushing"
         git push -u https://borkdude:$GITHUB_TOKEN@github.com/squint-cljs/squint.git HEAD
-        gh pr create -t "Bump common"
+        gh pr create -t "Bump common" -b "Bump common"
