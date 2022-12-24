@@ -6,12 +6,14 @@
            (let [sha (str/trim (:out (shell {:out :string} "git rev-parse HEAD")))]
              (shell "git filter-repo --subdirectory-filter=squint")
              (shell "git checkout -b" (str "bump-common-" (subs sha 0 7)))
+             (shell "git remote add upstream ssh://git@github.com/squint-cljs/squint")
+             (shell "git fetch upstream")
+             (shell "git rebase upstream/main")
              (shell "bb bump-common --sha" sha)
              (shell "git add deps.edn")
              (shell "git commit -m 'Bump compiler-common'")
-             (shell "git remote add upstream ssh://git@github.com/squint-cljs/squint")
-             (shell "git fetch upstream")
-             (shell {:continue true} "git rebase upstream/main")
-             (shell "git checkout deps.edn --theirs")
-             (shell "git add deps.edn")
-             (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")))}}}
+             (shell "git rebase upstream/main")
+             ;; (shell "git checkout deps.edn --theirs")
+             ;; (shell "git add deps.edn")
+             ;; (shell {:extra-env {"GIT_EDITOR" "true"}} "git rebase --continue")
+             ))}}}
