@@ -57,11 +57,19 @@ jobs:
         # Note: token must have access to squint-cljs with read/write for Contents, Actions, Issues and Pull Requests
         GITHUB_TOKEN: ${{ secrets.SQUINT_GITHUB_TOKEN }}
       run: |
-        bb squint:filter-repo
-        echo "Pushing"
-
+        git filter-repo --subdirectory-filter=squint
         git config user.name github-actions[bot]
         git config user.email github-actions[bot]@users.noreply.github.com
+        short_sha=$(git rev-parse --short HEAD)
+        git remote add origin https://$GITHUB_TOKEN@github.com/squint-cljs/squint.git
+        git fetch origin
+        bb bump-common --sha "$short_sha"
+        git add deps.edn
+        git commit -m "Bump compiler common"
+        git rebase origin/main --strategy-option theirs
+
+        bb squint:filter-repo
+        echo "Pushing"
 
         git push -u https://borkdude:$GITHUB_TOKEN@github.com/squint-cljs/squint.git HEAD
         branch=$(git branch --show)
