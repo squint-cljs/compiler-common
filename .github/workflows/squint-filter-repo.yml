@@ -1,9 +1,9 @@
 name: Squint Filter Repo
 
-on:
-  push:
-    branches:
-      - main
+on: [push]
+  # push:
+  #   branches:
+  #     - main
 
 jobs:
   test:
@@ -67,7 +67,7 @@ jobs:
         git fetch origin
         bb bump-common --sha "$original_sha"
         git add deps.edn
-        git commit -m "Bump compiler common"
+        git commit --amend -m "Bump compiler common"
         git rebase origin/main --strategy-option theirs
         echo "Pushing"
         git push -u https://borkdude:$GITHUB_TOKEN@github.com/squint-cljs/squint.git HEAD
