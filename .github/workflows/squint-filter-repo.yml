@@ -67,7 +67,7 @@ jobs:
         git fetch origin
         bb bump-common --sha "$original_sha"
         git add deps.edn
-        git commit -m "Bump compiler common"
+        GIT_EDITOR=true git commit --amend
         git rebase origin/main --strategy-option theirs
         echo "Pushing"
         git push -u https://borkdude:$GITHUB_TOKEN@github.com/squint-cljs/squint.git HEAD
