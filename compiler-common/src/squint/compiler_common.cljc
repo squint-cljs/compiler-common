@@ -19,7 +19,7 @@
           template
           substitutions))
 
-(defn emit-wrap [s env]
+(defn emit-return [s env]
   (if (= :return (:context env))
     (format "return %s;" s)
     s))
@@ -66,7 +66,7 @@
       (str/replace #"\$$" ""))))
 
 (defmethod emit nil [_ env]
-  (emit-wrap "null" env))
+  (emit-return "null" env))
 
 #?(:clj (derive #?(:clj java.lang.Integer) ::number))
 #?(:clj (derive #?(:clj java.lang.Long) ::number))
@@ -85,7 +85,7 @@
 
 (defmethod emit ::number [expr env]
   (-> (str expr)
-      (emit-wrap env)
+      (emit-return env)
       (emit-repl env)
       (escape-jsx env)))
 
@@ -93,14 +93,14 @@
   (-> (if (and (:jsx env)
                (not (:jsx-attr env)))
         expr
-        (emit-wrap (pr-str expr) env))
+        (emit-return (pr-str expr) env))
       (emit-repl env)))
 
 (defmethod emit #?(:clj java.lang.Boolean :cljs js/Boolean) [^String expr env]
   (-> (if (:jsx-attr env)
         (escape-jsx expr env)
         (str expr))
-      (emit-wrap env)
+      (emit-return env)
       (emit-repl env)))
 
 #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
@@ -109,7 +109,7 @@
 (defmethod emit :default [expr env]
   ;; RegExp case moved here:
   ;; References to the global RegExp object prevents optimization of regular expressions.
-  (emit-wrap (str expr) env))
+  (emit-return (str expr) env))
 
 (def prefix-unary-operators '#{!})
 
@@ -148,7 +148,7 @@
                                      '+ "+"}]
                   (str "(" (str/join (str " " (or (substitutions operator) operator) " ")
                                      (emit-args env args)) ")"))
-                (emit-wrap enc-env)))
+                (emit-return enc-env)))
           (emit-repl enc-env)))))
 
 (def core-vars (atom #{}))
@@ -164,7 +164,7 @@
 
 (defmethod emit #?(:clj clojure.lang.Symbol :cljs Symbol) [expr env]
   (if (:quote env)
-    (emit-wrap (escape-jsx (emit (list 'cljs.core/symbol
+    (emit-return (escape-jsx (emit (list 'cljs.core/symbol
                                        (str expr))
                                  (dissoc env :quote))env)
                env)
@@ -195,7 +195,7 @@
                       (let [m (munged-name expr)]
                         (str (when *repl*
                                (str (munge *cljs-ns*) ".")) m)))))]
-        (-> (emit-wrap (escape-jsx (str expr) env)
+        (-> (emit-return (escape-jsx (str expr) env)
                        env)
             (emit-repl env))))))
 
@@ -350,7 +350,7 @@
     (emit-var more env)))
 
 (defn js-await [env more]
-  (-> (emit-wrap (wrap-await (emit more (expr-env env))) env)
+  (-> (emit-return (wrap-await (emit more (expr-env env))) env)
       (emit-repl env)))
 
 (defmethod emit-special 'js/await [_ env [_await more]]
@@ -483,13 +483,13 @@
 
 (defn emit-method [env obj method args]
   (let [eenv (expr-env env)]
-    (emit-wrap (str (emit obj eenv) "."
+    (emit-return (str (emit obj eenv) "."
                     (str method)
                     (comma-list (emit-args env args)))
                env)))
 
 (defn emit-aget [env var idxs]
-  (emit-wrap (apply str
+  (emit-return (apply str
                     (emit var (expr-env env))
                     (interleave (repeat "[") (emit-args env idxs) (repeat "]")))
              env))
@@ -517,18 +517,18 @@
 (defmethod emit-special 'set! [_type env [_set! var val & more]]
   (assert (or (nil? more) (even? (count more))))
   (let [eenv (expr-env env)]
-    (emit-wrap (str (emit var eenv) " = " (emit val eenv) statement-separator
+    (emit-return (str (emit var eenv) " = " (emit val eenv) statement-separator
                     #_(when more (str (emit (cons 'set! more) env))))
                env)))
 
 (defmethod emit-special 'new [_type env [_new class & args]]
-  (emit-wrap (str "new " (emit class (expr-env env)) (comma-list (emit-args env args))) env))
+  (emit-return (str "new " (emit class (expr-env env)) (comma-list (emit-args env args))) env))
 
 (defmethod emit-special 'dec [_type env [_ var]]
-  (emit-wrap (str "(" (emit var (assoc env :context :expr)) " - " 1 ")") env))
+  (emit-return (str "(" (emit var (assoc env :context :expr)) " - " 1 ")") env))
 
 (defmethod emit-special 'inc [_type env [_ var]]
-  (emit-wrap (str "(" (emit var (assoc env :context :expr)) " + " 1 ")") env))
+  (emit-return (str "(" (emit var (assoc env :context :expr)) " + " 1 ")") env))
 
 #_(defmethod emit-special 'defined? [_type env [_ var]]
     (str "typeof " (emit var env) " !== \"undefined\" && " (emit var env) " !== null"))
@@ -536,11 +536,14 @@
 #_(defmethod emit-special '? [_type env [_ test then else]]
     (str (emit test env) " ? " (emit then env) " : " (emit else env)))
 
+(defn wrap-parens [s]
+  (str "(" s  ")"))
+
 (defmethod emit-special 'and [_type env [_ & more]]
-  (emit-wrap (apply str (interpose " && " (emit-args env more))) env))
+  (emit-return (wrap-parens (apply str (interpose " && " (emit-args env more)))) env))
 
 (defmethod emit-special 'or [_type env [_ & more]]
-  (emit-wrap (apply str (interpose " || " (emit-args env more))) env))
+  (emit-return (wrap-parens (apply str (interpose " || " (emit-args env more)))) env))
 
 (defmethod emit-special 'while [_type env [_while test & body]]
   (str "while (" (emit test) ") { \n"
@@ -605,7 +608,7 @@ break;}" body)
           (let [signature (first expr)
                 body (rest expr)]
             (str (emit-function env nil signature body))))
-        (emit-wrap env))))
+        (emit-return env))))
 
 (defmethod emit-special 'fn* [_type env [_fn & sigs :as expr]]
   (let [async? (:async (meta expr))]
@@ -653,7 +656,7 @@ break;}" body)
                               "}\n")))
             (not= :statement (:context env))
             (wrap-iife))
-          (emit-wrap outer-env)))))
+          (emit-return outer-env)))))
 
 #_(defmethod emit-special 'funcall [_type env [fname & args :as _expr]]
   (-> (emit-wrap (str
@@ -676,11 +679,11 @@ break;}" body)
         cherry+interop? (and
                          cherry?
                          (= "js" ns))]
-    (-> (emit-wrap (str
+    (-> (emit-return (str
                     (emit fname (expr-env env))
                     ;; this is needed when calling keywords, symbols, etc. We could
                     ;; optimize this later by inferring that we're not directly
-                    ;; calling a `function`.
+                     ;; calling a `function`.
                     (when (and cherry? (not cherry+interop?)) ".call")
                     (comma-list (emit-args env
                                            (if cherry?
