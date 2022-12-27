@@ -58,7 +58,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.SQUINT_GITHUB_TOKEN }}
       run: |
         original_sha=$(git rev-parse HEAD)
-        git filter-repo --subdirectory-filter=squint
+        git filter-repo --subdirectory-filter=squint --tag-rename squint:
         git config user.name github-actions[bot]
         git config user.email github-actions[bot]@users.noreply.github.com
         short_sha=$(git rev-parse --short HEAD)
